@@ -6,7 +6,7 @@
 int main() {
     test_hash_map();
     test_tokenizer();
-	printf("tests pass!!\n");
-	return 0;
+    printf("tests pass!!\n");
+    return 0;
 }
 
