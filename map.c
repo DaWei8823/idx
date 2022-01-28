@@ -11,15 +11,17 @@ typedef struct hash_map_node_s {
 struct hash_map_s {
     uint num_buckets;
     hash_map_node** buckets;
-    ops ops;
+    ops key_ops;
+    ops val_ops;
 };
 
 static inline hash_map_node *create_node(
+    hash_map map,
     const void *key, 
     const void *val, 
     hash_map_node *next); 
 
-hash_map create_hash_map(ops ops, int num_buckets) {
+hash_map create_hash_map(ops key_ops, ops val_ops, int num_buckets) {
     hash_map_node** buckets = malloc(sizeof(struct hash_map_node_s*)*num_buckets);
     if(buckets == NULL)
         return NULL;
@@ -30,31 +32,33 @@ hash_map create_hash_map(ops ops, int num_buckets) {
 
     s->num_buckets = num_buckets;
     s->buckets = buckets;
-    s->ops = ops;
+    s->key_ops = key_ops;
+    s->val_ops = val_ops;
     return s;
 }
 
-int hash_map_put(hash_map s, const void *key, const void *val) {
-    uint32_t bucket = s->ops.hash(key) % s->num_buckets;
-    hash_map_node* node = s->buckets[bucket];
+int hash_map_put(hash_map m, const void *key, const void *val) {
+    uint32_t bucket = m->key_ops.hash(key) % m->num_buckets;
+    hash_map_node* node = m->buckets[bucket];
     
-    if(node == NULL || s->ops.key_cmp(key, node->key) < 0) {
-       hash_map_node *new = create_node(key, val, node);
+    if(node == NULL || m->key_ops.cmp(key, node->key) < 0) {
+        hash_map_node *new = create_node(m, key, val, node);
        if(!new)
            return -1;
-       s->buckets[bucket] = new;
+       m->buckets[bucket] = new;
        return 0;
     }
 
-    while(node->next && s->ops.key_cmp(key, node->next->key) > 0)
+    while(node->next && m->key_ops.cmp(key, node->next->key) > 0)
         node = node->next;
     
-    if(node->next && s->ops.key_cmp(key, node->next->key) == 0) {
-        node->next->val = val;
+    if(node->next && m->key_ops.cmp(key, node->next->key) == 0) {
+        m->val_ops.free((void*)node->next->val);
+        node->next->val = m->val_ops.cp(val);
         return 0;
     }
 
-    hash_map_node *new = create_node(key, val, node->next);
+    hash_map_node *new = create_node(m, key, val, node->next);
     if(!new)
         return -1;
     node->next = new;
@@ -63,24 +67,24 @@ int hash_map_put(hash_map s, const void *key, const void *val) {
 }
 
 const void *hash_map_get(hash_map s, const void *key) {
-    uint32_t bucket = s->ops.hash(key) % s->num_buckets;
+    uint32_t bucket = s->key_ops.hash(key) % s->num_buckets;
     hash_map_node* node = s->buckets[bucket];
-    while(node != NULL && s->ops.key_cmp(key, node->key) >  0)
+    while(node != NULL && s->key_ops.cmp(key, node->key) >  0)
         node = node->next;
 
     return node ? node->val : NULL;
 }
 
-void hash_map_free(hash_map s) {
-    for(int i = 0; i < s->num_buckets; s++) {
-        hash_map_node* node = s->buckets[i];
+void hash_map_free(hash_map m) {
+    for(int i = 0; i < m->num_buckets; i++) {
+        hash_map_node* node = m->buckets[i];
         if(!node)
             continue;
 
         while(node) {
             hash_map_node* next = node->next;
-            s->ops.key_free(node->key);
-            s->ops.val_free(node->val);
+            m->key_ops.free((void*)node->key);
+            m->val_ops.free((void*)node->val);
             free(node);
             node = next;
         }
@@ -89,14 +93,16 @@ void hash_map_free(hash_map s) {
 
 
 static inline hash_map_node *create_node(
+    hash_map m,
     const void *key, 
     const void *val, 
     hash_map_node *next) {
     hash_map_node *node = malloc(sizeof(struct hash_map_node_s));
     if(!node)
         return NULL;
-    node->key = key;
-    node->val = val;
+
+    node->key = m->key_ops.cp(key);
+    node->val = m->val_ops.cp(val);
     node->next = next;
     return node; 
 }
