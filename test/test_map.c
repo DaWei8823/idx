@@ -25,9 +25,9 @@ void test_hash_map() {
     assert(strcmp(rb, "two") == 0);
     assert(strcmp(rc, "eleven") == 0);
     
-    //hash_map_put(m, &c, "updated");
-    //const char *updated = hash_map_get(m, &c);
-    //assert(strcmp(updated, "updated") == 0);
+    hash_map_put(m, &c, "updated");
+    const char *updated = hash_map_get(m, &c);
+    assert(strcmp(updated, "updated") == 0);
 
     hash_map_free(m);
 }
