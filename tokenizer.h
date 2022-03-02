@@ -17,5 +17,5 @@ typedef struct {
 } TokenStack;
 
 Token* pop_token(TokenStack* token_stack);
-char* read_next_token(TokenStack* token_stack, char** ptxt);
+int read_next_token(TokenStack* token_stack, char* ptxt);
 #endif

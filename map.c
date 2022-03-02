@@ -43,10 +43,10 @@ int hash_map_put(hash_map m, const void *key, const void *val) {
     
     if(node == NULL || m->key_ops.cmp(key, node->key) < 0) {
         hash_map_node *new = create_node(m, key, val, node);
-       if(!new)
-           return -1;
-       m->buckets[bucket] = new;
-       return 0;
+        if(!new)
+            return -1;
+        m->buckets[bucket] = new;
+        return 0;
     }
 
     while(node->next && m->key_ops.cmp(key, node->next->key) > 0)

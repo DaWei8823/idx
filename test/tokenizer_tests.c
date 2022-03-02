@@ -9,15 +9,11 @@ void test_tokenizer() {
         .top = NULL,
         .current_line = 1
     };
-    while(read_next_token(&stack, &text));
+    int len = 0;
+    while((len = read_next_token(&stack, text))) {
+        text+=len;
+    }
     
-   Token* first = pop_token(&stack);
-   assert(first->line_number == 3);
-   assert(strcmp(first->identifier, "}") == 0);
-
-   Token* snd = pop_token(&stack);
-   assert(snd->line_number == 2);
-   assert(strcmp(snd->identifier, ";") == 0);
 
    Token* third = pop_token(&stack);
    assert(third->line_number == 2);
@@ -35,9 +31,23 @@ void test_tokenizer() {
    assert(sixth->line_number == 2);
    assert(strcmp(sixth->identifier, "int") == 0);
    
+    
    Token* sev = pop_token(&stack);
    assert(sev->line_number == 1);
-   assert(strcmp(sev->identifier, "{") == 0);
+   assert(strcmp(sev->identifier, "x") == 0);
 
-   //TODO: implement rest
+
+   Token* eight = pop_token(&stack);
+   assert(eight->line_number == 1);
+   assert(strcmp(eight->identifier, "int") == 0);
+
+
+   Token* nine = pop_token(&stack);
+   assert(nine->line_number == 1);
+   assert(strcmp(nine->identifier, "foo") == 0);
+
+
+   Token* ten = pop_token(&stack);
+   assert(ten->line_number == 1);
+   assert(strcmp(ten->identifier, "void") == 0);
 }
